@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Start a search</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --field: #EDF1EA;      /* page background, pale lichen */
+    --paper: #FFFFFF;
+    --spruce: #14312B;     /* text and dark surfaces */
+    --moss: #4E6A60;       /* secondary text */
+    --hivis: #FFB300;      /* hi-vis amber, the send action */
+    --line: #C9D3CB;
+    --stop: #B3261E;
+    --go: #1F6B45;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--field);
+    color: var(--spruce);
+    font-family: "Atkinson Hyperlegible", Verdana, "Segoe UI", sans-serif;
+    font-size: 1.0625rem;
+    line-height: 1.45;
+  }
+  .tape {
+    height: 14px;
+    background: repeating-linear-gradient(-45deg, var(--hivis) 0 18px, var(--spruce) 18px 36px);
+  }
+  main { max-width: 34rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+  h1 { font-size: 2rem; line-height: 1.1; margin: 0 0 .4rem; }
+  .lede { margin: 0 0 1.5rem; color: var(--moss); }
+  h2 { font-size: 1.125rem; margin: 0 0 .75rem; }
+
+  label { display: block; font-weight: 700; margin: 1rem 0 .3rem; }
+  .hint { display: block; font-weight: 400; color: var(--moss); font-size: .9375rem; }
+  input, textarea {
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    padding: .7rem .8rem;
+  }
+  textarea { min-height: 5rem; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 3px solid var(--spruce);
+    outline-offset: 2px;
+  }
+  .pair { display: grid; grid-template-columns: 1fr 9rem; gap: .75rem; }
+  @media (max-width: 26rem) { .pair { grid-template-columns: 1fr; gap: 0; } }
+
+  details.setup {
+    background: var(--paper);
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    padding: .8rem 1rem;
+    margin-bottom: 1.5rem;
+  }
+  details.setup summary { font-weight: 700; cursor: pointer; }
+  details.setup p { margin: .6rem 0 0; color: var(--moss); font-size: .9375rem; }
+  .row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .8rem; }
+
+  .preview {
+    margin-top: 1.75rem;
+    background: var(--spruce);
+    color: #fff;
+    border-radius: 14px;
+    padding: 1rem 1.1rem;
+  }
+  .preview .cap { font-size: .875rem; color: #B9CBC3; margin: 0 0 .5rem; }
+  .preview .title { font-weight: 700; margin: 0 0 .25rem; }
+  .preview .body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+  button {
+    font: inherit;
+    font-weight: 700;
+    border-radius: 8px;
+    border: 2px solid var(--spruce);
+    background: var(--paper);
+    color: var(--spruce);
+    padding: .7rem 1rem;
+    cursor: pointer;
+    min-height: 48px;
+  }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  .send {
+    width: 100%;
+    margin-top: 1.25rem;
+    background: var(--hivis);
+    font-size: 1.25rem;
+    padding: 1rem;
+    min-height: 64px;
+  }
+  .send.armed { background: var(--stop); border-color: var(--stop); color: #fff; }
+  .cancel { width: 100%; margin-top: .6rem; }
+  .status {
+    margin-top: 1rem;
+    padding: .8rem 1rem;
+    border-radius: 8px;
+    border-left: 6px solid var(--moss);
+    background: var(--paper);
+  }
+  .status.ok { border-left-color: var(--go); }
+  .status.bad { border-left-color: var(--stop); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="tape" aria-hidden="true"></div>
+<main>
+  <h1>Start a search</h1>
+  <p class="lede">Fill in what you know and send. Every volunteer subscribed to the alert channel gets an urgent notification.</p>
+
+  <details class="setup" id="setup">
+    <summary id="setupSummary">Set up this device</summary>
+    <label for="topic">Alert channel name
+      <span class="hint">The ntfy topic your volunteers subscribe to. Saved on this device only, so it is never visible in the page itself.</span>
+    </label>
+    <input id="topic" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="e.g. lostdogs-k7Qm29xw">
+    <div class="row">
+      <button type="button" id="saveTopic">Save channel</button>
+      <button type="button" id="testBtn">Send a test alert</button>
+    </div>
+    <p>A test alert goes to everyone on the channel, marked as a test, at normal priority.</p>
+  </details>
+
+  <h2>Search details</h2>
+
+  <label for="dog">Dog's name</label>
+  <input id="dog" autocomplete="off" placeholder="Bella">
+
+  <label for="desc">Description
+    <span class="hint">Breed, colour, size, collar or harness.</span>
+  </label>
+  <input id="desc" autocomplete="off" placeholder="Brown cocker spaniel, red collar">
+
+  <div class="pair">
+    <div>
+      <label for="seen">Last seen</label>
+      <input id="seen" autocomplete="off" placeholder="Mill Lane, near the bridge">
+    </div>
+    <div>
+      <label for="time">Time</label>
+      <input id="time" type="time">
+    </div>
+  </div>
+
+  <label for="meet">Meeting point</label>
+  <input id="meet" autocomplete="off" placeholder="Church car park">
+
+  <label for="contact">Coordinator contact
+    <span class="hint">Name and number. Remembered on this device.</span>
+  </label>
+  <input id="contact" autocomplete="off" placeholder="Sam, 07700 900123">
+
+  <label for="notes">Instructions
+    <span class="hint">Anything volunteers must know before they arrive.</span>
+  </label>
+  <textarea id="notes" placeholder="Nervous dog. Do not call or chase. Report sightings only."></textarea>
+
+  <div class="preview" aria-live="polite">
+    <p class="cap">What volunteers will see</p>
+    <p class="title" id="pvTitle"></p>
+    <p class="body" id="pvBody"></p>
+  </div>
+
+  <button type="button" class="send" id="sendBtn">Send search alert</button>
+  <button type="button" class="cancel" id="cancelBtn" hidden>Cancel</button>
+  <div class="status" id="status" role="status" hidden></div>
+</main>
+
+<script>
+(function () {
+  var NTFY = "https://ntfy.sh";
+  var $ = function (id) { return document.getElementById(id); };
+  var fields = ["dog", "desc", "seen", "time", "meet", "contact", "notes"];
+  var armed = false, armTimer = null;
+
+  function load(key) { try { return localStorage.getItem(key) || ""; } catch (e) { return ""; } }
+  function save(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+  function val(id) { return $(id).value.trim(); }
+
+  function niceTime(t) {
+    if (!t) return "";
+    var p = t.split(":"), h = parseInt(p[0], 10), m = p[1];
+    var ap = h >= 12 ? "pm" : "am";
+    h = h % 12 || 12;
+    return h + ":" + m + " " + ap;
+  }
+
+  function build() {
+    var title = "Search active: " + (val("dog") || "dog's name");
+    var lines = [];
+    if (val("desc")) lines.push(val("desc"));
+    var seen = val("seen"), t = niceTime($("time").value);
+    if (seen || t) lines.push("Last seen: " + [seen, t].filter(Boolean).join(", "));
+    if (val("meet")) lines.push("Meet at: " + val("meet"));
+    if (val("contact")) lines.push("Contact: " + val("contact"));
+    if (val("notes")) lines.push(val("notes"));
+    return { title: title, message: lines.join("\n") };
+  }
+
+  function render() {
+    var m = build();
+    $("pvTitle").textContent = "\uD83D\uDC15 " + m.title;
+    $("pvBody").textContent = m.message || "Details appear here as you type.";
+  }
+
+  function status(text, kind) {
+    var s = $("status");
+    s.textContent = text;
+    s.className = "status" + (kind ? " " + kind : "");
+    s.hidden = false;
+  }
+
+  function setupState() {
+    var t = load("ntfyTopic");
+    $("topic").value = t;
+    $("setupSummary").textContent = t ? "Alert channel is set up on this device" : "Set up this device";
+    $("setup").open = !t;
+  }
+
+  function disarm() {
+    armed = false;
+    clearTimeout(armTimer);
+    $("sendBtn").classList.remove("armed");
+    $("sendBtn").textContent = "Send search alert";
+    $("cancelBtn").hidden = true;
+  }
+
+  function publish(payload) {
+    return fetch(NTFY, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      if (!r.ok) throw new Error("ntfy replied with error " + r.status);
+      return r;
+    });
+  }
+
+  function now() {
+    return new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  $("saveTopic").addEventListener("click", function () {
+    var t = val("topic");
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(t)) {
+      status("Channel names can only use letters, numbers, hyphens and underscores, with no spaces.", "bad");
+      return;
+    }
+    save("ntfyTopic", t);
+    setupState();
+    status("Channel saved on this device.", "ok");
+  });
+
+  $("testBtn").addEventListener("click", function () {
+    var t = load("ntfyTopic");
+    if (!t) { status("Save the alert channel name first.", "bad"); return; }
+    $("testBtn").disabled = true;
+    publish({
+      topic: t,
+      title: "Test alert",
+      message: "This is a test of the search alert system. No action needed.",
+      priority: 3,
+      tags: ["white_check_mark"]
+    }).then(function () {
+      status("Test alert sent at " + now() + ".", "ok");
+    }).catch(function (e) {
+      status("Test alert not sent. Check your signal and try again. (" + e.message + ")", "bad");
+    }).then(function () { $("testBtn").disabled = false; });
+  });
+
+  $("sendBtn").addEventListener("click", function () {
+    var t = load("ntfyTopic");
+    if (!t) {
+      $("setup").open = true;
+      status("Set up the alert channel on this device before sending.", "bad");
+      $("topic").focus();
+      return;
+    }
+    if (!val("dog")) { status("Add the dog's name.", "bad"); $("dog").focus(); return; }
+    if (!val("seen")) { status("Add where the dog was last seen.", "bad"); $("seen").focus(); return; }
+
+    if (!armed) {
+      armed = true;
+      $("sendBtn").classList.add("armed");
+      $("sendBtn").textContent = "Confirm: alert all volunteers";
+      $("cancelBtn").hidden = false;
+      $("status").hidden = true;
+      armTimer = setTimeout(disarm, 10000);
+      return;
+    }
+
+    var m = build();
+    var payload = {
+      topic: t,
+      title: m.title,
+      message: m.message,
+      priority: 5,
+      tags: ["dog"],
+      click: "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(val("seen"))
+    };
+    disarm();
+    $("sendBtn").disabled = true;
+    $("sendBtn").textContent = "Sending\u2026";
+    publish(payload).then(function () {
+      status("Search alert sent at " + now() + ". Volunteers can tap it to open the last seen location in maps.", "ok");
+      setTimeout(function () { $("sendBtn").disabled = false; }, 15000);
+    }).catch(function (e) {
+      status("Search alert not sent. Check your signal and send again. (" + e.message + ")", "bad");
+      $("sendBtn").disabled = false;
+    }).then(function () { $("sendBtn").textContent = "Send search alert"; });
+  });
+
+  $("cancelBtn").addEventListener("click", disarm);
+
+  fields.forEach(function (id) {
+    $(id).addEventListener("input", function () {
+      if (id === "contact") save("coordContact", $(id).value);
+      if (armed) disarm();
+      render();
+    });
+  });
+
+  $("contact").value = load("coordContact");
+  setupState();
+  render();
+})();
+</script>
+</body>
+</html>
